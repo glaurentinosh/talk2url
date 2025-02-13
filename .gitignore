@@ -188,4 +188,7 @@ pip-selfcheck.json
 ### Folders
 /legacy
 
+### Local data
+indexed_content.json
+
 # End of https://www.toptal.com/developers/gitignore/api/python,venv

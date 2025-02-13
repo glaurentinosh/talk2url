@@ -4,24 +4,49 @@ import requests
 # Backend API URL
 BACKEND_URL = "http://localhost:8000"
 
-st.title("Web Q&A App")
+st.title("Web Q&A Chatbot")
 
-# URL Indexing
-st.subheader("Step 1: Index a Webpage")
+# Store session ID
+if "session_id" not in st.session_state:
+    st.session_state.session_id = None
+
+# Step 1: Start a Chat Session
+if st.button("Start New Chat"):
+    response = requests.post(f"{BACKEND_URL}/start_chat/").json()
+    if response["status"] == "success":
+        st.session_state.session_id = response["session_id"]
+        st.session_state.chat_history = []
+        st.write("New chat session started!")
+    else:
+        st.write("Error starting chat.")
+
+# Step 2: Index a Webpage
+st.subheader("Index a Webpage")
 url = st.text_input("Enter URL:")
 if st.button("Index URL"):
     response = requests.post(f"{BACKEND_URL}/index/", params={"url": url}).json()
     st.write(response["message"])
 
-# Q&A Section
-st.subheader("Step 2: Ask a Question")
+# Step 3: Ask Questions in Chat Mode
+st.subheader("Ask a Question")
 question = st.text_input("Enter your question:")
+
 if st.button("Ask"):
-    if url:
-        response = requests.post(f"{BACKEND_URL}/ask/", params={"url": url, "question": question}).json()
+    if not st.session_state.session_id:
+        st.write("Please start a new chat first.")
+    elif url:
+        response = requests.post(
+            f"{BACKEND_URL}/ask/", 
+            params={"url": url, "question": question, "session_id": st.session_state.session_id}
+        ).json()
+        
         if response["status"] == "success":
-            st.write("Answer:", response["answer"])
+            st.session_state.chat_history = response["chat_history"]
+            st.write(f"**Answer:** {response['answer']}")
         else:
             st.write(response["message"])
-    else:
-        st.write("Please enter a URL and index it first.")
+
+# Display chat history
+st.subheader("Chat History")
+for msg in st.session_state.get("chat_history", []):
+    st.write(msg)

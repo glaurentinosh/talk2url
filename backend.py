@@ -1,13 +1,14 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 import requests
 import json
+import uuid  # For generating unique session IDs
 from transformers import pipeline
 from bs4 import BeautifulSoup
 import os
 import torch
 import nltk
 from nltk.tokenize import sent_tokenize
-from functools import lru_cache
+import streamlit as st  # Using Streamlit cache for model loading
 
 # Fix potential Torch path issue
 torch.classes.__path__ = [os.path.join(torch.__path__[0], torch.classes.__file__)]
@@ -18,13 +19,13 @@ nltk.download('punkt_tab')
 nltk.download('wordnet')
 nltk.download('omw-1.4')
 
-# Load the Question-Answering model
-# Caching Model using @lru_cache
-@lru_cache(maxsize=1)
+# Streamlit Cache for Model
+@st.cache_resource
 def load_qa_pipeline():
+    """Loads the QA model and caches it in memory."""
     return pipeline("question-answering", model="bert-large-uncased-whole-word-masking-finetuned-squad")
 
-qa_pipeline = load_qa_pipeline()
+qa_pipeline = load_qa_pipeline()  # Cached model
 
 # File to store indexed content
 INDEX_FILE = "indexed_content.json"
@@ -45,6 +46,9 @@ def save_indexed_content(data):
 # Load existing indexed content
 indexed_content = load_indexed_content()
 
+# Store chat history for multiple sessions
+chat_sessions = {}
+
 app = FastAPI()
 
 @app.post("/index/")
@@ -64,15 +68,34 @@ def index_url(url: str):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
+@app.post("/start_chat/")
+def start_chat():
+    """Creates a new chat session."""
+    session_id = str(uuid.uuid4())  # Generate unique session ID
+    chat_sessions[session_id] = []  # Initialize empty conversation history
+    return {"status": "success", "session_id": session_id}
+
 @app.post("/ask/")
-def ask(url: str, question: str):
-    """Answers a question based on indexed content."""
+def ask(url: str, question: str, session_id: str):
+    """Answers a question with chat history support."""
     if url not in indexed_content:
         return {"status": "error", "message": "URL not indexed yet. Please index it first."}
     
-    context = indexed_content[url]
-    result = qa_pipeline(question=question, context=context)
-    return {"status": "success", "answer": result['answer']}
+    if session_id not in chat_sessions:
+        return {"status": "error", "message": "Invalid session ID. Start a new chat session first."}
 
-# run in terminal with uvicorn backend:app --host 0.0.0.0 --port 8000 --reload
-# run in browser with http://localhost:8000/docs
+    # Get previous chat history
+    chat_history = chat_sessions[session_id]
+
+    # Combine previous questions and answers for better context
+    context = indexed_content[url] + " " + " ".join(chat_history[-5:])  # Last 5 messages
+
+    # Get the answer from the model
+    result = qa_pipeline(question=question, context=context)
+    answer = result['answer']
+
+    # Save question and answer to session
+    chat_sessions[session_id].append(f"Q: {question}")
+    chat_sessions[session_id].append(f"A: {answer}")
+
+    return {"status": "success", "answer": answer, "chat_history": chat_sessions[session_id]}

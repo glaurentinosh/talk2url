@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+transformers
+torch
+beautifulsoup4
+requests
+nltk
+streamlit
+uuid  # Included in Python's standard library, no need to install separately
+
+# Optional dependencies
+pydantic  # Ensures data validation (optional)

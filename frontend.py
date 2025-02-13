@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 
 # Backend API URL
-BACKEND_URL = "http://localhost:8000"
+BACKEND_URL = "https://talk2url.onrender.com/"
 
 st.title("Web Q&A Chatbot")
 

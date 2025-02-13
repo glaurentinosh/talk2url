@@ -13,12 +13,6 @@ import streamlit as st  # Using Streamlit cache for model loading
 # Fix potential Torch path issue
 torch.classes.__path__ = [os.path.join(torch.__path__[0], torch.classes.__file__)]
 
-# Download necessary NLTK data
-nltk.download('punkt')
-nltk.download('punkt_tab')
-nltk.download('wordnet')
-nltk.download('omw-1.4')
-
 # Streamlit Cache for Model
 @st.cache_resource
 def load_qa_pipeline():

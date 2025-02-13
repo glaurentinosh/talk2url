@@ -1,4 +1,4 @@
-# Talk2url
+# Talk2url project
 
 This project is a **Web Q&A Chatbot** that allows users to **index web pages** and **ask questions** about their content. It supports **follow-up questions** using session-based chat history.
 

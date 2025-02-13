@@ -8,16 +8,15 @@ import os
 import torch
 import nltk
 from nltk.tokenize import sent_tokenize
-import streamlit as st  # Using Streamlit cache for model loading
+from functools import lru_cache
 
 # Fix potential Torch path issue
 torch.classes.__path__ = [os.path.join(torch.__path__[0], torch.classes.__file__)]
 
-# Streamlit Cache for Model
-@st.cache_resource
+@lru_cache(maxsize=1)
 def load_qa_pipeline():
-    """Loads the QA model and caches it in memory."""
-    return pipeline("question-answering", model="bert-large-uncased-whole-word-masking-finetuned-squad")
+    """Loads the QA model (DeBERTa-v3-large) and caches it in memory."""
+    return pipeline("question-answering", model="microsoft/deberta-v3-large")
 
 qa_pipeline = load_qa_pipeline()  # Cached model
 
@@ -93,3 +92,5 @@ def ask(url: str, question: str, session_id: str):
     chat_sessions[session_id].append(f"A: {answer}")
 
     return {"status": "success", "answer": answer, "chat_history": chat_sessions[session_id]}
+
+# run in terminal uvicorn backend:app --host 0.0.0.0 --port 8000 --reload

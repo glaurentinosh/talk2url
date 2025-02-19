@@ -6,6 +6,9 @@ beautifulsoup4
 requests
 nltk
 streamlit
+datasets
+accelerate
+
 uuid  # Included in Python's standard library, no need to install separately
 
 # Optional dependencies

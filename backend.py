@@ -1,23 +1,23 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 import requests
 import json
-import uuid  # For generating unique session IDs
+import uuid
 from transformers import pipeline
 from bs4 import BeautifulSoup
 import os
 import torch
 import nltk
 from nltk.tokenize import sent_tokenize
-import streamlit as st  # Using Streamlit cache for model loading
+from functools import lru_cache
 
 # Fix potential Torch path issue
 torch.classes.__path__ = [os.path.join(torch.__path__[0], torch.classes.__file__)]
 
 # Streamlit Cache for Model
-@st.cache_resource
+@lru_cache(maxsize=1)
 def load_qa_pipeline():
     """Loads the QA model and caches it in memory."""
-    return pipeline("question-answering", model="bert-large-uncased-whole-word-masking-finetuned-squad")
+    return pipeline("question-answering", model="deepset/roberta-base-squad2")
 
 qa_pipeline = load_qa_pipeline()  # Cached model
 
@@ -53,8 +53,8 @@ def index_url(url: str):
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, "html.parser")
             text = ' '.join([p.get_text() for p in soup.find_all("p")])
-            sentences = sent_tokenize(text)  # Break into sentences
-            indexed_content[url] = " ".join(sentences[:100])  # Store first 100 sentences
+            sentences = sent_tokenize(text)
+            indexed_content[url] = " ".join(sentences[:100])
             save_indexed_content(indexed_content)
             return {"status": "success", "message": "Indexing successful!"}
         else:
